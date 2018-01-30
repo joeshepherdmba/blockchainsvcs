@@ -1,26 +1,46 @@
 pragma solidity ^0.4.16;
 
 contract Loan {
-    enum State { New, Active, Declined, Paid, Default }
     address _debtor;
+    address _lender;
     uint loanAmount;
     uint interestRate;
     uint datePaid;
+    
+    enum State { New, Active, Declined, Paid, Default }
     State public state; 
 
     mapping(address => uint) public balances;
 
-    function createLoan(address debtor, uint amount) public payable {
-        if (balances[msg.sender] < amount) 
+    modifier onlyLender() {
+        require(msg.sender == _lender);
+        _;
+    }
+
+    modifier onlyDebtor() {
+        require(msg.sender == _debtor);
+        _;
+    }
+
+    function Loan(address debtor, uint rate) public {
+        _lender = msg.sender;
+        _debtor = debtor;
+        interestRate = rate;
+    }
+
+    function fund(address debtor) public payable onlyLender {
+        loanAmount = msg.value;
+        
+        if (balances[msg.sender] < loanAmount) 
         return;
         
         _debtor = debtor; 
-        balances[msg.sender] -= amount;
-        balances[debtor] += amount;
-        Funded(msg.sender, debtor, amount);
+        balances[msg.sender] -= loanAmount;
+        balances[debtor] += loanAmount;
+        Funded(msg.sender, debtor, loanAmount);
     }
 
-    function payOff(address lender, uint amount, uint date) public payable {
+    function payOff(address lender, uint amount, uint date) public payable onlyDebtor {
         if (balances[msg.sender] < amount) 
         return;
         
