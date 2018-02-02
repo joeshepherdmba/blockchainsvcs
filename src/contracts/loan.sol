@@ -1,4 +1,4 @@
-pragma solidity ^0.4.16;
+pragma solidity ^0.4.2;
 
 contract Loan {
     address _debtor;
@@ -10,6 +10,7 @@ contract Loan {
     enum State { New, Active, Declined, Paid, Default }
     State public state; 
 
+    // Track Debtor loan amounts 
     mapping(address => uint) loanBalances;
 
     // Set up new loan
@@ -20,7 +21,38 @@ contract Loan {
         New(_lender, _debtor, interestRate);
     }
 
-    // Fund new loan
+    /*
+     Modifiers
+    */
+
+    // Require Lender is sender
+    modifier onlyLender() {
+        require(msg.sender == _lender);
+        _;
+    }
+    
+    // Require Debtor is sender
+    modifier onlyDebtor() {
+        require(msg.sender == _debtor);
+        _;
+    }
+
+    modifier inState(State _state) {
+        require(state == _state);
+        _;
+    }
+
+    /*
+     Events
+    */
+
+    event New(address lender, address debtor, uint rate);
+    event Funded(address lender, address debtor, uint amount);
+    event PaidInFull(address debtor, address lender, uint amount, uint datePaid);
+    event PaymentMade(address debtor, address lender, uint amount, uint datePaid, uint balance);
+    event Defaulted();
+
+        // Fund new loan
     function fund(address debtor) public payable onlyLender {
         loanAmount = msg.value;
   
@@ -44,30 +76,6 @@ contract Loan {
         }
     }
 
-
-    /*
-     Modifiers
-    */
-
-    // Require Lender is sender
-    modifier onlyLender() {
-        require(msg.sender == _lender);
-        _;
-    }
-    
-    // Require Debtor is sender
-    modifier onlyDebtor() {
-        require(msg.sender == _debtor);
-        _;
-    }
-
-    /*
-     Events
-    */
-
-    event New(address lender, address debtor, uint rate);
-    event Funded(address lender, address debtor, uint amount);
-    event PaidInFull(address debtor, address lender, uint amount, uint datePaid);
-    event PaymentMade(address debtor, address lender, uint amount, uint datePaid, uint balance);
-    event Defaulted();
+    // Subcurrency Example: http://solidity.readthedocs.io/en/develop/introduction-to-smart-contracts.html?highlight=mappings
+    // Bank Walkthrough: https://learnxinyminutes.com/docs/solidity/
 }
